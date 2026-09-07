@@ -20,14 +20,14 @@ function getGenAI(): GoogleGenerativeAI {
 
 // ─── Models ───────────────────────────────────────────────────────────────────
 
-const EMBEDDING_MODEL = "text-embedding-004";
-const LLM_MODEL = "gemini-2.0-flash";
+const EMBEDDING_MODEL = process.env.GEMINI_EMBEDDING_MODEL || "gemini-embedding-001";
+const LLM_MODEL = process.env.GEMINI_CHAT_MODEL || "gemini-2.5-flash";
 
 // ─── Embedding Generation ─────────────────────────────────────────────────────
 
 /**
  * Generate embeddings for an array of text strings.
- * Uses Gemini text-embedding-004 (768 dimensions).
+ * Uses Gemini gemini-embedding-001 with 768 output dimensions.
  * Processes in batches of 20 to respect rate limits.
  */
 export async function generateEmbeddings(texts: string[]): Promise<number[][]> {
@@ -44,7 +44,8 @@ export async function generateEmbeddings(texts: string[]): Promise<number[][]> {
         model.embedContent({
           content: { role: "user", parts: [{ text }] },
           taskType: TaskType.RETRIEVAL_DOCUMENT,
-        })
+          outputDimensionality: 768,
+        } as any)
       )
     );
 
@@ -70,7 +71,8 @@ export async function generateQueryEmbedding(query: string): Promise<number[]> {
   const result = await model.embedContent({
     content: { role: "user", parts: [{ text: query }] },
     taskType: TaskType.RETRIEVAL_QUERY,
-  });
+    outputDimensionality: 768,
+  } as any);
   return result.embedding.values;
 }
 

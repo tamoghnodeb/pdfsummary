@@ -17,6 +17,21 @@ export interface DocumentChunk {
 
 // ─── PDF Text Extraction ──────────────────────────────────────────────────────
 
+let workerInitPromise: Promise<void> | null = null;
+
+async function ensureWorker() {
+  if (!(globalThis as any).pdfjsWorker) {
+    if (!workerInitPromise) {
+      workerInitPromise = (async () => {
+        // @ts-ignore
+        const worker = await import("pdfjs-dist/legacy/build/pdf.worker.mjs");
+        (globalThis as any).pdfjsWorker = worker;
+      })();
+    }
+    await workerInitPromise;
+  }
+}
+
 /**
  * Extract text from a PDF buffer, page by page.
  * Uses pdfjs-dist which has proper ESM support.
@@ -24,11 +39,11 @@ export interface DocumentChunk {
 export async function extractTextFromPDF(
   buffer: Buffer
 ): Promise<PageContent[]> {
-  // Dynamic import to avoid SSR/Turbopack issues
-  const { getDocument, GlobalWorkerOptions } = await import("pdfjs-dist");
+  await ensureWorker();
 
-  // Disable the worker for Node.js server-side usage
-  GlobalWorkerOptions.workerSrc = "";
+  // Dynamic import of legacy build for Node.js server-side usage
+  // @ts-ignore - legacy build has identical API to pdfjs-dist root
+  const { getDocument } = await import("pdfjs-dist/legacy/build/pdf.mjs");
 
   const pages: PageContent[] = [];
 

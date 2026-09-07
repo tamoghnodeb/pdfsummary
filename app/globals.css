@@ -436,7 +436,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  color: #fff;
   box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }
 
@@ -549,10 +549,12 @@ body {
   }
 }
 
-.upload-icon {
-  font-size: 28px;
+.upload-icon-svg {
   margin-bottom: 8px;
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
 }
 
 .upload-text {
@@ -588,9 +590,10 @@ body {
 }
 
 .sidebar-empty-icon {
-  font-size: 36px;
   margin-bottom: 10px;
-  opacity: 0.4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .doc-item {
@@ -619,7 +622,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 15px;
+  color: var(--text-accent);
   flex-shrink: 0;
 }
 

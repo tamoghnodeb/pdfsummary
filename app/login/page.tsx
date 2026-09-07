@@ -53,7 +53,11 @@ export default function LoginPage() {
     <div className="login-container">
       <div className="glass-card login-card">
         {/* Logo */}
-        <div className="login-logo">🧠</div>
+        <div className="login-logo">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+        </div>
 
         {/* Title */}
         <h1 className="login-title">DocMind AI</h1>
@@ -66,7 +70,7 @@ export default function LoginPage() {
         {/* Error */}
         {error && (
           <div className="login-error" role="alert">
-            🔒 {error}
+            {error}
           </div>
         )}
 
@@ -106,7 +110,7 @@ export default function LoginPage() {
                 </div>
               </>
             ) : (
-              <>🚀 Enter DocMind</>
+              <>Enter DocMind</>
             )}
           </button>
         </form>

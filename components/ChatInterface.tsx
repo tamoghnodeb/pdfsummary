@@ -207,7 +207,7 @@ export default function ChatInterface() {
           m.id === assistantId
             ? {
                 ...m,
-                content: `⚠️ **Error**: ${errMsg}\n\nPlease try again. If the issue persists, check that your documents have been processed successfully.`,
+                content: `**Error**: ${errMsg}\n\nPlease try again. If the issue persists, check that your documents have been processed successfully.`,
               }
             : m
         )
@@ -233,7 +233,11 @@ export default function ChatInterface() {
         {/* ── Header ─────────────────────────────────────── */}
         <header className="app-header">
           <div className="header-brand">
-            <div className="header-logo">🧠</div>
+            <div className="header-logo">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+            </div>
             <div>
               <div className="header-title">DocMind AI</div>
               <div className="header-subtitle">RAG-Powered Document Chat</div>
@@ -271,19 +275,23 @@ export default function ChatInterface() {
           <div className="chat-messages" id="chat-messages">
             {messages.length === 0 ? (
               <div className="chat-welcome">
-                <div className="welcome-icon">💬</div>
+                <div className="welcome-icon">
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                  </svg>
+                </div>
                 <h2 className="welcome-title">Ask Your Documents</h2>
                 <p className="welcome-desc">
-                  Upload PDFs using the sidebar, then ask any question. I&apos;ll
+                  Upload PDFs using the sidebar, then ask any question. The AI will
                   search across all your documents and give you cited, grounded
-                  answers — no hallucinations.
+                  answers.
                 </p>
                 <div className="feature-chips">
-                  <div className="chip">📄 Up to 50 PDFs</div>
-                  <div className="chip">🔍 Semantic Search</div>
-                  <div className="chip">📚 Cross-doc Analysis</div>
-                  <div className="chip">🔗 Citations</div>
-                  <div className="chip">⚡ Streaming</div>
+                  <div className="chip">Up to 50 PDFs</div>
+                  <div className="chip">Semantic Search</div>
+                  <div className="chip">Cross-doc Analysis</div>
+                  <div className="chip">Citations</div>
+                  <div className="chip">Streaming</div>
                 </div>
               </div>
             ) : (
@@ -349,9 +357,6 @@ export default function ChatInterface() {
       <div className="toast-container" aria-live="polite">
         {toasts.map((toast) => (
           <div key={toast.id} className={`toast ${toast.type}`} role="status">
-            {toast.type === "success" && "✅ "}
-            {toast.type === "error" && "❌ "}
-            {toast.type === "info" && "ℹ️ "}
             {toast.message}
           </div>
         ))}

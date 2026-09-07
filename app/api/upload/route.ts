@@ -1,41 +1,43 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
+
+export const maxDuration = 60;
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  // Auth guard
   const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = (await request.json()) as HandleUploadBody;
-
   try {
-    const jsonResponse = await handleUpload({
-      body,
-      request,
-      onBeforeGenerateToken: async (pathname) => {
-        // Validate file type
-        if (!pathname.toLowerCase().endsWith(".pdf")) {
-          throw new Error("Only PDF files are allowed.");
-        }
-        return {
-          allowedContentTypes: ["application/pdf"],
-          maximumSizeInBytes: 50 * 1024 * 1024, // 50 MB per file
-          tokenPayload: JSON.stringify({ sessionId: request.headers.get("x-session-id") }),
-        };
-      },
-      onUploadCompleted: async ({ blob, tokenPayload }) => {
-        // Optional: log upload completion
-        console.log("Upload completed:", blob.pathname, blob.url);
-      },
-    });
+    const formData = await request.formData();
+    const file = formData.get("file") as File | null;
+    const sessionId = formData.get("sessionId") as string | null;
 
-    return NextResponse.json(jsonResponse);
+    if (!file) {
+      return NextResponse.json({ error: "No file provided" }, { status: 400 });
+    }
+    if (!sessionId) {
+      return NextResponse.json({ error: "No sessionId provided" }, { status: 400 });
+    }
+    if (!file.name.toLowerCase().endsWith(".pdf")) {
+      return NextResponse.json({ error: "Only PDF files are allowed" }, { status: 400 });
+    }
+
+    // Convert to buffer and forward to process route logic inline
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    return NextResponse.json({
+      success: true,
+      filename: file.name,
+      size: file.size,
+      buffer: buffer.toString("base64"),
+      sessionId,
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Upload failed";
-    return NextResponse.json({ error: message }, { status: 400 });
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

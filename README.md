@@ -1,4 +1,4 @@
-# DocMind AI 🧠
+# DocMind AI 
 
 A production-grade **Retrieval-Augmented Generation (RAG) chatbot** that lets you upload up to 50 PDF documents and ask natural-language questions across them — with grounded, cited answers powered by Google Gemini.
 
@@ -6,23 +6,23 @@ A production-grade **Retrieval-Augmented Generation (RAG) chatbot** that lets yo
 
 ---
 
-## ✨ Features
+##  Features
 
 | Feature | Details |
 |:---|:---|
-| 📄 **Multi-PDF Upload** | Up to 50 PDFs per session, drag-and-drop |
-| 🔍 **Semantic Search** | Gemini `text-embedding-004` (768-dim) + Pinecone |
-| 🤖 **Grounded Answers** | Gemini 2.0 Flash — never hallucinator, cites sources |
-| 🔗 **Citations** | Filename + page number for every answer |
-| ⚡ **Streaming** | Token-by-token streaming via SSE |
-| ♻️ **Deduplication** | SHA-256 hash — skip re-embedding unchanged files |
-| 🗣️ **Conversation Memory** | Follow-up questions with context |
-| 🔒 **Auth** | Password gate via NextAuth.js |
-| 📱 **Responsive** | Mobile-friendly dark glassmorphism UI |
+|  **Multi-PDF Upload** | Up to 50 PDFs per session, drag-and-drop |
+|  **Semantic Search** | Gemini `text-embedding-004` (768-dim) + Pinecone |
+|  **Grounded Answers** | Gemini 2.0 Flash — never hallucinator, cites sources |
+|  **Citations** | Filename + page number for every answer |
+|  **Streaming** | Token-by-token streaming via SSE |
+| ️ **Deduplication** | SHA-256 hash — skip re-embedding unchanged files |
+| ️ **Conversation Memory** | Follow-up questions with context |
+|  **Auth** | Password gate via NextAuth.js |
+|  **Responsive** | Mobile-friendly dark glassmorphism UI |
 
 ---
 
-## 🏗️ Architecture
+## ️ Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -71,7 +71,7 @@ Context string → Gemini stream → SSE to browser → Citations rendered
 
 ---
 
-## 🚀 Quick Start (Local)
+##  Quick Start (Local)
 
 ### Prerequisites
 - Node.js 18+
@@ -135,7 +135,7 @@ Open [http://localhost:3000](http://localhost:3000) and log in with your `APP_PA
 
 ---
 
-## ☁️ Deploy to Vercel
+## ️ Deploy to Vercel
 
 ### 1. Push to GitHub
 
@@ -161,7 +161,7 @@ Vercel auto-deploys on every push to `main`.
 
 ---
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 aarush/
@@ -194,7 +194,7 @@ aarush/
 
 ---
 
-## ⚙️ Configuration
+## ️ Configuration
 
 | Variable | Description | Default |
 |:---|:---|:---|
@@ -208,7 +208,7 @@ aarush/
 
 ---
 
-## 🧪 Testing
+##  Testing
 
 ### Manual Test Checklist
 
@@ -238,7 +238,7 @@ Sample questions to evaluate with 3 different PDFs:
 
 ---
 
-## 🛠️ Tech Stack
+## ️ Tech Stack
 
 | Component | Technology |
 |:---|:---|
@@ -254,7 +254,7 @@ Sample questions to evaluate with 3 different PDFs:
 
 ---
 
-## 📊 Performance
+##  Performance
 
 - **PDF Processing**: ~1–3s per 20-page document (network dependent)
 - **Query Latency**: < 2s first token (embedding + Pinecone + Gemini)
@@ -264,10 +264,10 @@ Sample questions to evaluate with 3 different PDFs:
 
 ---
 
-## 📜 License
+##  License
 
 MIT License — free for personal and educational use.
 
 ---
 
-*Built with ❤️ for RAG demonstration purposes.*
+*Built with ️ for RAG demonstration purposes.*

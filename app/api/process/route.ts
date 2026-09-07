@@ -5,12 +5,11 @@ import { extractTextFromPDF, createDocumentChunks, buildPineconeVectors } from "
 import { generateEmbeddings } from "@/lib/gemini";
 import { documentExists, upsertVectors } from "@/lib/pinecone";
 import { computeHash } from "@/lib/utils";
-import type { ProcessRequest, ProcessResponse } from "@/types";
+import type { ProcessResponse } from "@/types";
 
-export const maxDuration = 60; // Allow up to 60s for PDF processing (Vercel Hobby)
+export const maxDuration = 60;
 
 export async function POST(request: NextRequest): Promise<NextResponse<ProcessResponse>> {
-  // Auth guard
   const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json(
@@ -19,7 +18,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ProcessRe
     );
   }
 
-  let body: ProcessRequest;
+  let body: { buffer: string; filename: string; sessionId: string };
   try {
     body = await request.json();
   } catch {
@@ -29,9 +28,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<ProcessRe
     );
   }
 
-  const { blobUrl, filename, sessionId } = body;
+  const { buffer: base64Buffer, filename, sessionId } = body;
 
-  if (!blobUrl || !filename || !sessionId) {
+  if (!base64Buffer || !filename || !sessionId) {
     return NextResponse.json(
       { success: false, docHash: "", filename, pageCount: 0, chunkCount: 0, skipped: false, error: "Missing required fields" },
       { status: 400 }
@@ -39,12 +38,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<ProcessRe
   }
 
   try {
-    // 1. Fetch PDF from Vercel Blob
-    const fetchResponse = await fetch(blobUrl);
-    if (!fetchResponse.ok) {
-      throw new Error(`Failed to fetch PDF: ${fetchResponse.statusText}`);
-    }
-    const pdfBuffer = Buffer.from(await fetchResponse.arrayBuffer());
+    // 1. Decode base64 buffer
+    const pdfBuffer = Buffer.from(base64Buffer, "base64");
 
     // 2. Compute hash for deduplication
     const docHash = computeHash(pdfBuffer);
@@ -65,7 +60,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ProcessRe
     // 4. Extract text per page
     const pages = await extractTextFromPDF(pdfBuffer);
     if (pages.length === 0) {
-      throw new Error("No readable text found in this PDF. It may be scanned/image-based.");
+      throw new Error("No readable text found in this PDF. It may be scanned or image-based.");
     }
 
     // 5. Chunk the text

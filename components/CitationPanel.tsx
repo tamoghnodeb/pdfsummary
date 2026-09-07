@@ -11,7 +11,7 @@ export default function CitationPanel({ citations }: Props) {
     <aside className="citations-panel">
       <div className="citations-header">
         <div className="citations-title">
-          🔗 Sources
+          Sources
           {citations.length > 0 && (
             <span className="citations-count">{citations.length}</span>
           )}
@@ -21,7 +21,12 @@ export default function CitationPanel({ citations }: Props) {
       <div className="citations-list">
         {citations.length === 0 ? (
           <div className="citations-empty">
-            <div className="citations-empty-icon">📖</div>
+            <div className="citations-empty-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.3 }}>
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+              </svg>
+            </div>
             <p>Sources will appear here after each response.</p>
           </div>
         ) : (
@@ -56,7 +61,6 @@ export default function CitationPanel({ citations }: Props) {
         )}
       </div>
 
-      {/* Footer */}
       {citations.length > 0 && (
         <div
           style={{
@@ -67,7 +71,7 @@ export default function CitationPanel({ citations }: Props) {
             textAlign: "center",
           }}
         >
-          Grounded in your documents · No hallucinations
+          Grounded in your documents
         </div>
       )}
     </aside>
