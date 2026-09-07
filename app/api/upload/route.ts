@@ -1,15 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 
 export const maxDuration = 60;
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
@@ -25,7 +18,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: "Only PDF files are allowed" }, { status: 400 });
     }
 
-    // Convert to buffer and forward to process route logic inline
+    // Convert to buffer and return as base64 for /api/process
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 

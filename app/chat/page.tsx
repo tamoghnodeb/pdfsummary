@@ -1,6 +1,3 @@
-import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import ChatInterface from "@/components/ChatInterface";
 
 export const metadata = {
@@ -8,11 +5,6 @@ export const metadata = {
   description: "Chat with your uploaded PDF documents using AI-powered RAG",
 };
 
-export default async function ChatPage() {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    redirect("/login");
-  }
-
+export default function ChatPage() {
   return <ChatInterface />;
 }

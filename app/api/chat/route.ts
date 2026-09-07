@@ -1,6 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { NextRequest } from "next/server";
 import { generateQueryEmbedding, streamRAGResponse } from "@/lib/gemini";
 import { semanticSearch } from "@/lib/pinecone";
 import { truncate } from "@/lib/utils";
@@ -26,11 +24,6 @@ ${chunk.text}`;
 // ─── POST /api/chat ───────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest): Promise<Response> {
-  // Auth guard
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return new Response("Unauthorized", { status: 401 });
-  }
 
   let body: ChatRequest;
   try {

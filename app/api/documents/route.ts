@@ -1,17 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { listDocumentsForSession, deleteDocumentVectors } from "@/lib/pinecone";
 import type { DocumentListResponse, DeleteDocumentRequest } from "@/types";
 
 // ─── GET /api/documents?sessionId=xxx ─────────────────────────────────────────
 
 export async function GET(request: NextRequest): Promise<NextResponse<DocumentListResponse | { error: string }>> {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   const sessionId = request.nextUrl.searchParams.get("sessionId");
   if (!sessionId) {
     return NextResponse.json({ error: "sessionId is required" }, { status: 400 });
@@ -29,11 +22,6 @@ export async function GET(request: NextRequest): Promise<NextResponse<DocumentLi
 // ─── DELETE /api/documents ────────────────────────────────────────────────────
 
 export async function DELETE(request: NextRequest): Promise<NextResponse<{ success: boolean } | { error: string }>> {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   let body: DeleteDocumentRequest;
   try {
     body = await request.json();

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { signOut } from "next-auth/react";
 import DocumentSidebar from "./DocumentSidebar";
 import MessageBubble from "./MessageBubble";
 import CitationPanel from "./CitationPanel";
@@ -249,14 +248,6 @@ export default function ChatInterface() {
               <div className="status-dot" />
               Gemini 2.5 Flash
             </div>
-            <button
-              id="signout-btn"
-              className="btn btn-ghost"
-              style={{ padding: "7px 14px", fontSize: "13px" }}
-              onClick={() => signOut({ callbackUrl: "/login" })}
-            >
-              Sign Out
-            </button>
           </div>
         </header>
 

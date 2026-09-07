@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { extractTextFromPDF, createDocumentChunks, buildPineconeVectors } from "@/lib/pdf-processor";
 import { generateEmbeddings } from "@/lib/gemini";
 import { documentExists, upsertVectors } from "@/lib/pinecone";
@@ -10,14 +8,6 @@ import type { ProcessResponse } from "@/types";
 export const maxDuration = 60;
 
 export async function POST(request: NextRequest): Promise<NextResponse<ProcessResponse>> {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json(
-      { success: false, docHash: "", filename: "", pageCount: 0, chunkCount: 0, skipped: false, error: "Unauthorized" },
-      { status: 401 }
-    );
-  }
-
   let body: { buffer: string; filename: string; sessionId: string };
   try {
     body = await request.json();
