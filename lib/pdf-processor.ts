@@ -1,14 +1,7 @@
 import "server-only";
-
-// Polyfill for DOMMatrix which is required by pdfjs-dist in Node environments
-if (typeof globalThis.DOMMatrix === "undefined") {
-  globalThis.DOMMatrix = class DOMMatrix {
-    constructor() {}
-  } as any;
-}
-
 import { cleanText, buildChunkId } from "@/lib/utils";
 import type { ChunkMetadata, PineconeVector } from "@/types";
+import pdfParse from "pdf-parse";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -27,43 +20,50 @@ export interface DocumentChunk {
 
 /**
  * Extract text from a PDF buffer, page by page.
- * Uses pdf-parse (which bundles its own pdfjs-dist) — works on Vercel
- * without any web worker configuration.
+ * Uses pdf-parse v1.1.1 which operates purely on the server without needing
+ * web workers or browser API polyfills (like DOMMatrix).
  */
-export async function extractTextFromPDF(
-  buffer: Buffer
-): Promise<PageContent[]> {
-  // pdf-parse bundles its own pdfjs-dist; no worker setup needed
-  const { PDFParse } = await import("pdf-parse");
-
+export async function extractTextFromPDF(buffer: Buffer): Promise<PageContent[]> {
   const pages: PageContent[] = [];
 
   try {
-    const parser = new PDFParse({
-      data: new Uint8Array(buffer),
-      useWorkerFetch: false,
-      isEvalSupported: false,
-      useSystemFonts: true,
-      disableFontFace: true,
-    } as any);
+    function render_page(pageData: any) {
+      const render_options = {
+        normalizeWhitespace: false,
+        disableCombineTextItems: false,
+      };
 
-    // getText() returns { pages: Array<{text: string, num: number}>, text: string }
-    const result = await (parser as any).getText({});
-
-    const rawPages: Array<{ text: string; num: number }> = result.pages ?? [];
-
-    for (const rawPage of rawPages) {
-      const cleaned = cleanText(rawPage.text ?? "");
-      if (cleaned.length > 10) {
-        pages.push({ pageNumber: rawPage.num, text: cleaned });
-      }
+      return pageData
+        .getTextContent(render_options)
+        .then(function (textContent: any) {
+          let lastY,
+            text = "";
+          for (const item of textContent.items) {
+            if (lastY == item.transform[5] || !lastY) {
+              text += item.str;
+            } else {
+              text += "\n" + item.str;
+            }
+            lastY = item.transform[5];
+          }
+          const cleaned = cleanText(text);
+          if (cleaned.length > 10) {
+            pages.push({ pageNumber: pageData.pageNumber, text: cleaned });
+          }
+          return text;
+        });
     }
+
+    await pdfParse(buffer, { pagerender: render_page });
+    
+    // Sort pages by page number just in case they resolved out of order
+    pages.sort((a, b) => a.pageNumber - b.pageNumber);
+    
+    return pages;
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Unknown PDF error";
     throw new Error(`Failed to parse PDF: ${msg}`);
   }
-
-  return pages;
 }
 
 // ─── Text Chunking ────────────────────────────────────────────────────────────
