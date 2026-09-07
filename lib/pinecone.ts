@@ -1,3 +1,4 @@
+import "server-only";
 import { Pinecone } from "@pinecone-database/pinecone";
 import type { PineconeVector, RetrievedChunk, ChunkMetadata } from "@/types";
 
@@ -24,6 +25,7 @@ function getIndex() {
 
 /**
  * Check if a document with this hash has already been embedded for this session.
+ * Uses a zero-vector query with metadata filter.
  */
 export async function documentExists(
   docHash: string,
@@ -47,7 +49,8 @@ export async function documentExists(
 
 /**
  * Upsert a batch of vectors into Pinecone.
- * Automatically splits into batches of 100 (Pinecone limit).
+ * Uses Pinecone v8 API: index.upsert({ records: [...] })
+ * Automatically splits into batches of 100.
  */
 export async function upsertVectors(vectors: PineconeVector[]): Promise<void> {
   const index = getIndex();
@@ -55,13 +58,13 @@ export async function upsertVectors(vectors: PineconeVector[]): Promise<void> {
 
   for (let i = 0; i < vectors.length; i += BATCH_SIZE) {
     const batch = vectors.slice(i, i + BATCH_SIZE);
-    await index.upsert(
-      batch.map((v) => ({
+    await index.upsert({
+      records: batch.map((v) => ({
         id: v.id,
         values: v.values,
-        metadata: v.metadata as Record<string, string | number | boolean>,
-      }))
-    );
+        metadata: v.metadata as unknown as Record<string, string | number | boolean>,
+      })),
+    });
   }
 }
 
@@ -75,7 +78,7 @@ export async function semanticSearch(
   queryEmbedding: number[],
   sessionId: string,
   topK: number = 5,
-  scoreThreshold: number = 0.4
+  scoreThreshold: number = 0.3
 ): Promise<RetrievedChunk[]> {
   const index = getIndex();
 
@@ -126,7 +129,7 @@ export async function listDocumentsForSession(sessionId: string): Promise<
 > {
   const index = getIndex();
 
-  // Query with a zero vector to list all documents (metadata only)
+  // Query with a zero vector to sample all documents (metadata only)
   const results = await index.query({
     vector: new Array(768).fill(0),
     topK: 1000,
@@ -175,7 +178,7 @@ export async function listDocumentsForSession(sessionId: string): Promise<
 
 /**
  * Delete all vectors associated with a document hash in a session.
- * Uses Pinecone's deleteMany with metadata filter.
+ * Fetches IDs first, then deletes in batches.
  */
 export async function deleteDocumentVectors(
   docHash: string,
@@ -183,7 +186,7 @@ export async function deleteDocumentVectors(
 ): Promise<void> {
   const index = getIndex();
 
-  // Fetch IDs to delete (Pinecone free tier requires fetch-then-delete)
+  // Fetch IDs to delete
   const results = await index.query({
     vector: new Array(768).fill(0),
     topK: 1000,
@@ -198,7 +201,8 @@ export async function deleteDocumentVectors(
   if (!results.matches?.length) return;
 
   const ids = results.matches.map((m) => m.id);
-  // Delete in batches
+
+  // Delete in batches of 100
   const BATCH_SIZE = 100;
   for (let i = 0; i < ids.length; i += BATCH_SIZE) {
     await index.deleteMany(ids.slice(i, i + BATCH_SIZE));
