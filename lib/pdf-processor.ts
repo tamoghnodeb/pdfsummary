@@ -1,4 +1,12 @@
 import "server-only";
+
+// Polyfill for DOMMatrix which is required by pdfjs-dist in Node environments
+if (typeof globalThis.DOMMatrix === "undefined") {
+  globalThis.DOMMatrix = class DOMMatrix {
+    constructor() {}
+  } as any;
+}
+
 import { cleanText, buildChunkId } from "@/lib/utils";
 import type { ChunkMetadata, PineconeVector } from "@/types";
 
