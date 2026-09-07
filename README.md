@@ -1,34 +1,26 @@
 # DocMind AI
 
-A full-stack **Retrieval-Augmented Generation (RAG) chatbot** built with Next.js. Upload PDF documents and ask natural-language questions — powered by Google Gemini embeddings, Pinecone vector search, and streaming responses with source citations.
+**DocMind AI** is a full-stack **Retrieval-Augmented Generation (RAG) chatbot** built with Next.js. Upload PDF documents and ask natural-language questions — powered by Google Gemini embeddings, Pinecone vector search, and streaming responses with source citations.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/tamoghnodeb/pdfsummary)
+### 🚀 Live Deployment
+**[View the Live App on Vercel](https://pdfsummary-c67ajhv90-tamoghnodebs-projects.vercel.app)**
 
----
-
-## Features
-
-| Feature | Details |
-|:---|:---|
-| **Multi-PDF Upload** | Up to 50 PDFs per session via drag-and-drop |
-| **Semantic Search** | Gemini `gemini-embedding-001` (768-dim) + Pinecone vector search |
-| **Grounded Answers** | Gemini 2.5 Flash — answers strictly from your documents |
-| **Source Citations** | Every answer includes filename and page number |
-| **Streaming** | Token-by-token output via Server-Sent Events |
-| **Deduplication** | SHA-256 hash check — never re-embeds the same file twice |
-| **Conversation Memory** | Follow-up questions retain context from the session |
-| **Auth** | Password-protected access via NextAuth.js |
-| **Responsive UI** | Dark glassmorphism design — works on desktop and mobile |
+### 💻 Source Code
+**[GitHub Repository](https://github.com/tamoghnodeb/pdfsummary)**
 
 ---
 
-## Architecture
+## Architecture Diagram
 
-```
+The application leverages a modern Serverless architecture to ingest, process, and query documents in real-time.
+
+```text
                           ┌───────────────────────────────┐
                           │        Next.js 16 (Vercel)    │
                           │                               │
-                          │  /login   /chat   /api/*      │
+                          │  /chat   /api/upload          │
+                          │          /api/process         │
+                          │          /api/chat            │
                           └──────────────┬────────────────┘
                                          │
                ┌─────────────────────────┼─────────────────────────┐
@@ -45,16 +37,31 @@ A full-stack **Retrieval-Augmented Generation (RAG) chatbot** built with Next.js
 ```
 
 **Upload flow:**
-```
+```text
 Browser → POST /api/upload (base64) → /api/process →
-  pdfjs-dist (text extraction) → chunk → Gemini embed → Pinecone upsert
+  pdf-parse (text extraction) → chunking → Gemini embed → Pinecone upsert
 ```
 
 **Query flow:**
-```
+```text
 User query → Gemini embed query → Pinecone top-5 → context string →
   Gemini 2.5 Flash stream → SSE to browser → citations rendered
 ```
+
+---
+
+## Features
+
+| Feature | Details |
+|:---|:---|
+| **Multi-PDF Upload** | Up to 50 PDFs per session via drag-and-drop |
+| **Semantic Search** | Gemini `gemini-embedding-001` (768-dim) + Pinecone vector search |
+| **Grounded Answers** | Gemini 2.5 Flash — answers strictly from your documents |
+| **Source Citations** | Every answer includes filename and page number |
+| **Streaming** | Token-by-token output via Server-Sent Events |
+| **Deduplication** | SHA-256 hash check — never re-embeds the same file twice |
+| **Conversation Memory** | Follow-up questions retain context from the session |
+| **Responsive UI** | Dark glassmorphism design — works on desktop and mobile |
 
 ---
 
@@ -79,7 +86,7 @@ npm install
 cp .env.example .env.local
 ```
 
-Open `.env.local` and fill in your keys (see [Environment Variables](#environment-variables) below).
+Open `.env.local` and fill in your API keys.
 
 ### 3. Run locally
 
@@ -87,29 +94,22 @@ Open `.env.local` and fill in your keys (see [Environment Variables](#environmen
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) and log in with your `APP_PASSWORD`.
+Open [http://localhost:3000](http://localhost:3000). The app will automatically redirect to the chat interface.
 
 ---
 
 ## Deploy to Vercel
 
-### 1. Push to GitHub
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/tamoghnodeb/pdfsummary)
 
-```bash
-git add .
-git commit -m "initial commit"
-git branch -M main
-git push -u origin main
-```
+1. Import your repository into Vercel.
+2. Under **Environment Variables**, add:
+   - `GEMINI_API_KEY`
+   - `PINECONE_API_KEY`
+   - `PINECONE_INDEX_NAME`
+3. Click **Deploy**.
 
-### 2. Import to Vercel
-
-1. Go to [vercel.com/new](https://vercel.com/new) and import your repository
-2. Under **Environment Variables**, add every key from `.env.example`
-3. Set `NEXTAUTH_URL` to your Vercel deployment URL (e.g. `https://your-project.vercel.app`)
-4. Click **Deploy**
-
-> **Common issue:** The server error on first deploy is almost always missing environment variables. Make sure all keys from `.env.example` are added in Vercel → Project Settings → Environment Variables.
+> **Note:** Ensure Vercel Authentication (Deployment Protection) is disabled if you want the app to be publicly accessible.
 
 ---
 
@@ -120,9 +120,6 @@ git push -u origin main
 | `GEMINI_API_KEY` | Google AI Studio API key | ✓ |
 | `PINECONE_API_KEY` | Pinecone API key | ✓ |
 | `PINECONE_INDEX_NAME` | Name of your Pinecone index | ✓ |
-| `NEXTAUTH_SECRET` | Random secret for JWT signing (`openssl rand -base64 32`) | ✓ |
-| `NEXTAUTH_URL` | Full URL of your deployment — `http://localhost:3000` for local dev, your Vercel URL in production | ✓ |
-| `APP_PASSWORD` | Password users enter to access the app | ✓ |
 
 ### Setting up services
 
@@ -156,29 +153,25 @@ git push -u origin main
 pdfsummary/
 ├── app/
 │   ├── api/
-│   │   ├── auth/[...nextauth]/   # NextAuth.js handler
 │   │   ├── upload/               # PDF ingestion endpoint
 │   │   ├── process/              # Text extraction → embed → Pinecone
 │   │   ├── chat/                 # SSE streaming RAG endpoint
 │   │   └── documents/            # List / delete indexed documents
-│   ├── chat/page.tsx             # Protected chat interface
-│   ├── login/page.tsx            # Login page
-│   ├── layout.tsx                # Root layout + SessionProvider
+│   ├── chat/page.tsx             # Main chat interface
+│   ├── layout.tsx                # Root layout
 │   └── globals.css               # Design system (glassmorphism)
 ├── components/
-│   ├── ChatInterface.tsx          # Main orchestrator component
-│   ├── DocumentSidebar.tsx        # Upload zone + document list
-│   ├── MessageBubble.tsx          # Chat message renderer
-│   ├── CitationPanel.tsx          # Source citation display
-│   └── SessionProvider.tsx        # NextAuth client wrapper
+│   ├── ChatInterface.tsx         # Main orchestrator component
+│   ├── DocumentSidebar.tsx       # Upload zone + document list
+│   ├── MessageBubble.tsx         # Chat message renderer
+│   └── CitationPanel.tsx         # Source citation display
 ├── lib/
-│   ├── gemini.ts                  # Gemini embeddings + chat
-│   ├── pinecone.ts                # Vector DB read/write
-│   ├── pdf-processor.ts           # PDF text extraction + chunking
-│   ├── auth.ts                    # NextAuth config
-│   └── utils.ts                   # Shared utilities
-├── types/index.ts                 # TypeScript type definitions
-└── .env.example                   # Environment variable template
+│   ├── gemini.ts                 # Gemini embeddings + chat
+│   ├── pinecone.ts               # Vector DB read/write
+│   ├── pdf-processor.ts          # PDF text extraction + chunking
+│   └── utils.ts                  # Shared utilities
+├── types/index.ts                # TypeScript type definitions
+└── .env.example                  # Environment variable template
 ```
 
 ---
@@ -192,8 +185,7 @@ pdfsummary/
 | LLM | Google Gemini 2.5 Flash |
 | Embeddings | Gemini `gemini-embedding-001` (768-dim) |
 | Vector DB | Pinecone Serverless |
-| PDF Parsing | pdfjs-dist (server-side) |
-| Auth | NextAuth.js v4 (Credentials provider) |
+| PDF Parsing | pdf-parse (server-side) |
 | Styling | Vanilla CSS — dark glassmorphism |
 | Deployment | Vercel |
 
