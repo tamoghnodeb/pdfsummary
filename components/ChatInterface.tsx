@@ -247,7 +247,7 @@ export default function ChatInterface() {
           <div className="header-actions">
             <div className="status-badge">
               <div className="status-dot" />
-              Gemini 2.0 Flash
+              Gemini 2.5 Flash
             </div>
             <button
               id="signout-btn"

@@ -17,76 +17,37 @@ export interface DocumentChunk {
 
 // ─── PDF Text Extraction ──────────────────────────────────────────────────────
 
-let workerInitPromise: Promise<void> | null = null;
-
-async function ensureWorker() {
-  if (!(globalThis as any).pdfjsWorker) {
-    if (!workerInitPromise) {
-      workerInitPromise = (async () => {
-        // @ts-ignore
-        const worker = await import("pdfjs-dist/legacy/build/pdf.worker.mjs");
-        (globalThis as any).pdfjsWorker = worker;
-      })();
-    }
-    await workerInitPromise;
-  }
-}
-
 /**
  * Extract text from a PDF buffer, page by page.
- * Uses pdfjs-dist which has proper ESM support.
+ * Uses pdf-parse (which bundles its own pdfjs-dist) — works on Vercel
+ * without any web worker configuration.
  */
 export async function extractTextFromPDF(
   buffer: Buffer
 ): Promise<PageContent[]> {
-  await ensureWorker();
-
-  // Dynamic import of legacy build for Node.js server-side usage
-  // @ts-ignore - legacy build has identical API to pdfjs-dist root
-  const { getDocument } = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  // pdf-parse bundles its own pdfjs-dist; no worker setup needed
+  const { PDFParse } = await import("pdf-parse");
 
   const pages: PageContent[] = [];
 
   try {
-    // Convert Buffer to Uint8Array for pdfjs-dist
-    const uint8Array = new Uint8Array(buffer);
-
-    const pdf = await getDocument({
-      data: uint8Array,
+    const parser = new PDFParse({
+      data: new Uint8Array(buffer),
       useWorkerFetch: false,
       isEvalSupported: false,
       useSystemFonts: true,
       disableFontFace: true,
-    }).promise;
+    } as any);
 
-    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-      try {
-        const page = await pdf.getPage(pageNum);
-        const textContent = await page.getTextContent();
+    // getText() returns { pages: Array<{text: string, num: number}>, text: string }
+    const result = await (parser as any).getText({});
 
-        // Join text items preserving spacing
-        let pageText = "";
-        let lastY: number | null = null;
+    const rawPages: Array<{ text: string; num: number }> = result.pages ?? [];
 
-        for (const item of textContent.items) {
-          if ("str" in item) {
-            // Add newline if we're on a new line (different Y position)
-            if (lastY !== null && Math.abs((item as any).transform[5] - lastY) > 5) {
-              pageText += "\n";
-            }
-            pageText += item.str;
-            if ((item as any).hasEOL) pageText += "\n";
-            lastY = (item as any).transform[5];
-          }
-        }
-
-        const cleaned = cleanText(pageText);
-        if (cleaned.length > 10) {
-          pages.push({ pageNumber: pageNum, text: cleaned });
-        }
-      } catch (pageError) {
-        console.warn(`Failed to extract page ${pageNum}:`, pageError);
-        // Continue with other pages
+    for (const rawPage of rawPages) {
+      const cleaned = cleanText(rawPage.text ?? "");
+      if (cleaned.length > 10) {
+        pages.push({ pageNumber: rawPage.num, text: cleaned });
       }
     }
   } catch (error) {
