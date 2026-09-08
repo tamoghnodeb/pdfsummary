@@ -18,15 +18,23 @@ export function truncate(text: string, maxChars: number): string {
 }
 
 /**
- * Remove raw citations blocks or leaked JSON citation payloads from text.
+ * Remove raw citations blocks or leaked JSON citation payloads from text,
+ * including unclosed or in-flight streaming markdown blocks.
  */
 export function stripCitations(text: string): string {
   if (!text) return "";
   return text
-    .replace(/```citations[\s\S]*?```/gi, "")
-    .replace(/```json[\s\S]*?```/gi, (m) => (m.includes("filename") ? "" : m))
-    .replace(/(?:\r?\n|^)\s*(?:citations?|sources?)\s*:?\s*(\[|\{)[\s\S]*$/gi, "")
-    .replace(/(?:\r?\n|^)\s*\[\s*\{\s*"filename"[\s\S]*$/gi, "")
+    // Matches ```citations whether closed by ``` or unclosed/streaming to end of string ($)
+    .replace(/```\s*citations[\s\S]*?(?:```|$)/gi, "")
+    // Matches ```json with citation payload whether closed or unclosed
+    .replace(/```\s*json\s*\[\s*\{[\s\S]*?(?:```|$)/gi, "")
+    // Matches any code block containing filenames
+    .replace(/```[\s\S]*?"filename"[\s\S]*?(?:```|$)/gi, "")
+    // Matches any line starting with citations: [ or sources: [
+    .replace(/(?:\r?\n|^)\s*(?:citations?|sources?)\s*:?\s*(?:\[|\{)[\s\S]*$/gi, "")
+    // Matches unclosed array of objects [{"filename": ...
+    .replace(/(?:\r?\n|^|\s)\[\s*\{\s*"?filename"?[\s\S]*$/gi, "")
+    // Matches word citations followed by [
     .replace(/\bcitations\s*[\r\n\s]*\[\s*\{[\s\S]*$/gi, "")
     .replace(/\[\s*\{\s*"filename"[\s\S]*$/gi, "")
     .trim();

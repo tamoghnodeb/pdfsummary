@@ -92,7 +92,7 @@ CRITICAL RULES:
 5. For follow-up questions, use the conversation history to understand context, but still ground answers strictly in the document context.
 6. For comparison questions across multiple documents, clearly distinguish which document contains which information.
 7. Be concise, well-structured, and professional. Use clean markdown formatting: clear headings, neat bulleted or numbered lists, and bold keywords.
-8. Do NOT output raw JSON blocks or citation arrays at the end — our UI automatically displays interactive citations in a dedicated panel.`;
+8. NEVER output the word "citations", code blocks like citations [...], or raw JSON arrays at the end of your response. Your response must strictly contain ONLY clean conversational markdown. Citations are handled separately by the user interface.`;
 }
 
 // ─── LLM Streaming ────────────────────────────────────────────────────────────
