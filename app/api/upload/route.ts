@@ -10,29 +10,42 @@ export const maxDuration = 60;
  * 4.5 MB Serverless Function body limit).
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  const body = (await request.json()) as HandleUploadBody;
+  const token = (process.env.BLOB_READ_WRITE_TOKEN || "").trim().replace(/^"|"$/g, "");
+
+  if (!token) {
+    console.error("BLOB_READ_WRITE_TOKEN is missing or empty.");
+    return NextResponse.json(
+      { error: "BLOB_READ_WRITE_TOKEN is not configured on the server." },
+      { status: 500 }
+    );
+  }
+
+  let body: HandleUploadBody;
+  try {
+    body = (await request.json()) as HandleUploadBody;
+  } catch (err) {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
 
   try {
     const jsonResponse = await handleUpload({
       body,
       request,
+      token,
       onBeforeGenerateToken: async (pathname) => {
-        // Allow only PDF files up to 50 MB
         return {
-          allowedContentTypes: ["application/pdf"],
           maximumSizeInBytes: 50 * 1024 * 1024, // 50 MB
           tokenPayload: JSON.stringify({ pathname }),
         };
       },
       onUploadCompleted: async ({ blob, tokenPayload }) => {
-        // Called by Vercel webhook after upload finishes.
-        // Note: does NOT fire during local dev (no public URL).
         console.log("Blob upload completed:", blob.url, tokenPayload);
       },
     });
 
     return NextResponse.json(jsonResponse);
   } catch (error) {
+    console.error("Upload token generation failed:", error);
     const message = error instanceof Error ? error.message : "Upload token error";
     return NextResponse.json({ error: message }, { status: 400 });
   }
