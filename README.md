@@ -3,7 +3,7 @@
 **DocMind AI** is a full-stack **Retrieval-Augmented Generation (RAG) chatbot** built with Next.js. Upload PDF documents and ask natural-language questions — powered by Google Gemini embeddings, Pinecone vector search, and streaming responses with source citations.
 
 ### 🚀 Live Deployment
-**[View the Live App on Vercel](https://pdfsummary-c67ajhv90-tamoghnodebs-projects.vercel.app)**
+**[View the Live App on Vercel](https://pdfsummary-r833mkil2-tamoghnodebs-projects.vercel.app/chat)**
 
 ### 💻 Source Code
 **[GitHub Repository](https://github.com/tamoghnodeb/pdfsummary)**
