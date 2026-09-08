@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import type { Message } from "@/types";
 import LoadingDots from "./LoadingDots";
+import { stripCitations } from "@/lib/client-utils";
 
 interface Props {
   message: Message;
@@ -13,12 +14,7 @@ interface Props {
 
 function renderMarkdown(text: string): string {
   // Remove citations block or raw JSON leaks before rendering
-  let clean = text
-    .replace(/```citations[\s\S]*?```/gi, "")
-    .replace(/```json\s*\[\s*\{[\s\S]*?```/gi, "")
-    .replace(/\bcitations\s*\[\s*\{[\s\S]*$/gi, "")
-    .replace(/\[\s*\{\s*"filename"[\s\S]*$/gi, "")
-    .trim();
+  let clean = stripCitations(text);
 
   // Escape HTML
   clean = clean

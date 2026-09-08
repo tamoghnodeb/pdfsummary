@@ -6,6 +6,7 @@ import MessageBubble from "./MessageBubble";
 import CitationPanel from "./CitationPanel";
 import LoadingDots from "./LoadingDots";
 import type { Message, Citation, DocumentInfo, UploadedFile } from "@/types";
+import { stripCitations } from "@/lib/client-utils";
 
 // ─── Session ID Management ────────────────────────────────────────────────────
 
@@ -25,15 +26,6 @@ interface Toast {
   id: string;
   message: string;
   type: "success" | "error" | "info";
-}
-
-function cleanMessageContent(content: string): string {
-  return content
-    .replace(/```citations[\s\S]*?```/gi, "")
-    .replace(/```json\s*\[\s*\{[\s\S]*?```/gi, "")
-    .replace(/\bcitations\s*\[\s*\{[\s\S]*$/gi, "")
-    .replace(/\[\s*\{\s*"filename"[\s\S]*$/gi, "")
-    .trim();
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -185,7 +177,7 @@ export default function ChatInterface() {
 
             if (event.type === "token") {
               fullContent += event.content;
-              const displayContent = cleanMessageContent(fullContent);
+              const displayContent = stripCitations(fullContent);
               setMessages((prev) =>
                 prev.map((m) =>
                   m.id === assistantId ? { ...m, content: displayContent } : m

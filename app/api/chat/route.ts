@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { generateQueryEmbedding, streamRAGResponse } from "@/lib/gemini";
 import { semanticSearch } from "@/lib/pinecone";
-import { truncate } from "@/lib/utils";
+import { truncate, stripCitations } from "@/lib/utils";
 import type { ChatRequest, Citation, RetrievedChunk } from "@/types";
 
 export const maxDuration = 60;
@@ -48,10 +48,10 @@ export async function POST(request: NextRequest): Promise<Response> {
     // 3. Build context string with source attribution
     const context = buildContextString(retrievedChunks);
 
-    // 4. Build chat history for Gemini
+    // 4. Build chat history for Gemini (strip any previous raw citation artifacts)
     const geminiHistory = history.slice(-6).map((msg) => ({
       role: msg.role === "user" ? "user" : ("model" as "user" | "model"),
-      parts: [{ text: msg.content }],
+      parts: [{ text: stripCitations(msg.content) }],
     }));
 
     // 5. Build citations metadata to append at end of stream
