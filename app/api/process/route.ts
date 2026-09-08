@@ -3,12 +3,13 @@ import { extractTextFromPDF, createDocumentChunks, buildPineconeVectors } from "
 import { generateEmbeddings } from "@/lib/gemini";
 import { documentExists, upsertVectors } from "@/lib/pinecone";
 import { computeHash } from "@/lib/utils";
+import { del } from "@vercel/blob";
 import type { ProcessResponse } from "@/types";
 
 export const maxDuration = 60;
 
 export async function POST(request: NextRequest): Promise<NextResponse<ProcessResponse>> {
-  let body: { buffer: string; filename: string; sessionId: string };
+  let body: { buffer?: string; blobUrl?: string; filename: string; sessionId: string };
   try {
     body = await request.json();
   } catch {
@@ -18,9 +19,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<ProcessRe
     );
   }
 
-  const { buffer: base64Buffer, filename, sessionId } = body;
+  const { buffer: base64Buffer, blobUrl, filename, sessionId } = body;
 
-  if (!base64Buffer || !filename || !sessionId) {
+  if ((!base64Buffer && !blobUrl) || !filename || !sessionId) {
     return NextResponse.json(
       { success: false, docHash: "", filename, pageCount: 0, chunkCount: 0, skipped: false, error: "Missing required fields" },
       { status: 400 }
@@ -28,8 +29,20 @@ export async function POST(request: NextRequest): Promise<NextResponse<ProcessRe
   }
 
   try {
-    // 1. Decode base64 buffer
-    const pdfBuffer = Buffer.from(base64Buffer, "base64");
+    let pdfBuffer: Buffer;
+
+    if (blobUrl) {
+      // ── Fetch PDF from Vercel Blob (client-upload flow) ──────────────────────
+      const blobRes = await fetch(blobUrl);
+      if (!blobRes.ok) {
+        throw new Error(`Failed to fetch uploaded file from storage (${blobRes.status})`);
+      }
+      const arrayBuffer = await blobRes.arrayBuffer();
+      pdfBuffer = Buffer.from(arrayBuffer);
+    } else {
+      // ── Decode base64 buffer (legacy / local-dev fallback) ───────────────────
+      pdfBuffer = Buffer.from(base64Buffer!, "base64");
+    }
 
     // 2. Compute hash for deduplication
     const docHash = computeHash(pdfBuffer);
@@ -37,6 +50,10 @@ export async function POST(request: NextRequest): Promise<NextResponse<ProcessRe
     // 3. Check if already processed for this session
     const alreadyExists = await documentExists(docHash, sessionId);
     if (alreadyExists) {
+      // Clean up blob even for duplicates
+      if (blobUrl) {
+        await del(blobUrl).catch(() => {/* ignore cleanup errors */});
+      }
       return NextResponse.json({
         success: true,
         docHash,
@@ -67,6 +84,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<ProcessRe
     const vectors = buildPineconeVectors(chunks, embeddings);
     await upsertVectors(vectors);
 
+    // 8. Clean up the temporary blob now that processing is done
+    if (blobUrl) {
+      await del(blobUrl).catch(() => {/* ignore cleanup errors */});
+    }
+
     return NextResponse.json({
       success: true,
       docHash,
@@ -77,6 +99,10 @@ export async function POST(request: NextRequest): Promise<NextResponse<ProcessRe
     });
   } catch (error) {
     console.error("PDF processing error:", error);
+    // Best-effort blob cleanup on error too
+    if (blobUrl) {
+      await del(blobUrl).catch(() => {});
+    }
     const message = error instanceof Error ? error.message : "Processing failed";
     return NextResponse.json(
       { success: false, docHash: "", filename, pageCount: 0, chunkCount: 0, skipped: false, error: message },

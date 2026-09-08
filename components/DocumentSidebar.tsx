@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useCallback } from "react";
+import { upload } from "@vercel/blob/client";
 import type { UploadedFile, DocumentInfo } from "@/types";
 import { formatFileSize } from "@/lib/client-utils";
 
@@ -57,25 +58,19 @@ export default function DocumentSidebar({
       onFilesUploaded([initialFile]);
 
       try {
-        // Read file as base64 directly in browser using native FileReader
-        const base64 = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => {
-            const res = reader.result as string;
-            const commaIndex = res.indexOf(",");
-            resolve(commaIndex !== -1 ? res.substring(commaIndex + 1) : res);
-          };
-          reader.onerror = () => reject(new Error("Failed to read file"));
-          reader.readAsDataURL(file);
+        // Upload directly to Vercel Blob (bypasses Vercel's 4.5 MB API body limit)
+        const blob = await upload(filename, file, {
+          access: "public",
+          handleUploadUrl: "/api/upload",
         });
 
         onFileStatusUpdate(filename, { status: "processing" });
 
-        // Send buffer + metadata to /api/process
+        // Send only the blob URL to /api/process — no large body
         const processRes = await fetch("/api/process", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ buffer: base64, filename, sessionId }),
+          body: JSON.stringify({ blobUrl: blob.url, filename, sessionId }),
         });
 
         const processData = await processRes.json();
