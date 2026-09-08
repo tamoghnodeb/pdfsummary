@@ -27,6 +27,15 @@ interface Toast {
   type: "success" | "error" | "info";
 }
 
+function cleanMessageContent(content: string): string {
+  return content
+    .replace(/```citations[\s\S]*?```/gi, "")
+    .replace(/```json\s*\[\s*\{[\s\S]*?```/gi, "")
+    .replace(/\bcitations\s*\[\s*\{[\s\S]*$/gi, "")
+    .replace(/\[\s*\{\s*"filename"[\s\S]*$/gi, "")
+    .trim();
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function ChatInterface() {
@@ -176,8 +185,7 @@ export default function ChatInterface() {
 
             if (event.type === "token") {
               fullContent += event.content;
-              // Strip the citations block from displayed content
-              const displayContent = fullContent.replace(/```citations[\s\S]*?```/g, "").trim();
+              const displayContent = cleanMessageContent(fullContent);
               setMessages((prev) =>
                 prev.map((m) =>
                   m.id === assistantId ? { ...m, content: displayContent } : m

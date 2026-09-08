@@ -12,14 +12,22 @@ interface Props {
 // ─── Minimal markdown renderer ─────────────────────────────────────────────────
 
 function renderMarkdown(text: string): string {
-  // Remove citations block before rendering
-  let clean = text.replace(/```citations[\s\S]*?```/g, "").trim();
+  // Remove citations block or raw JSON leaks before rendering
+  let clean = text
+    .replace(/```citations[\s\S]*?```/gi, "")
+    .replace(/```json\s*\[\s*\{[\s\S]*?```/gi, "")
+    .replace(/\bcitations\s*\[\s*\{[\s\S]*$/gi, "")
+    .replace(/\[\s*\{\s*"filename"[\s\S]*$/gi, "")
+    .trim();
 
   // Escape HTML
   clean = clean
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
+
+  // Normalize inline bullet points that LLMs sometimes output without newlines
+  clean = clean.replace(/(\n|^|\s)\*\s+/g, "\n* ");
 
   // Code blocks (must be before inline code)
   clean = clean.replace(/```[\w]*\n?([\s\S]*?)```/g, (_, code) => {
@@ -58,7 +66,14 @@ function renderMarkdown(text: string): string {
     .map((block) => {
       const b = block.trim();
       if (!b) return "";
-      if (b.startsWith("<h") || b.startsWith("<pre") || b.startsWith("<ul") || b.startsWith("<blockquote") || b.startsWith("<hr")) {
+      if (
+        b.startsWith("<h") ||
+        b.startsWith("<pre") ||
+        b.startsWith("<ul") ||
+        b.startsWith("<ol") ||
+        b.startsWith("<blockquote") ||
+        b.startsWith("<hr")
+      ) {
         return b;
       }
       // Convert single newlines to <br>

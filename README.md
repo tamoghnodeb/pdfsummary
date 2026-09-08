@@ -10,6 +10,25 @@
 
 ---
 
+## 📸 Screenshots & Demo
+
+<div align="center">
+
+### 1. Document Chat & Grounded Responses with Real-time Citations
+![DocMind Chat Interface](./screenshots/screenshot-3.png)
+
+<br/>
+
+### 2. PDF Processing & Multi-Document Semantic Search
+<p float="left">
+  <img src="./screenshots/screenshot-1.png" width="48%" alt="Upload & Document Management" />
+  <img src="./screenshots/screenshot-2.png" width="48%" alt="Interactive Chat & Citations" />
+</p>
+
+</div>
+
+---
+
 ## Architecture Diagram
 
 The application leverages a modern Serverless architecture to ingest, process, and query documents in real-time.

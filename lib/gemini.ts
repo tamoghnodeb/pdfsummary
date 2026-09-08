@@ -79,7 +79,7 @@ export async function generateQueryEmbedding(query: string): Promise<number[]> {
 // ─── System Prompt ────────────────────────────────────────────────────────────
 
 function buildSystemInstruction(context: string): string {
-  return `You are a precise, helpful AI assistant that answers questions EXCLUSIVELY based on the provided document context.
+  return `You are a precise, professional AI assistant that answers questions EXCLUSIVELY based on the provided document context.
 
 CONTEXT FROM UPLOADED DOCUMENTS:
 ${context}
@@ -88,17 +88,11 @@ CRITICAL RULES:
 1. ONLY use information found in the context above to answer questions.
 2. If the answer is not in the context, say: "I don't have enough information in the uploaded documents to answer this question."
 3. NEVER fabricate facts, statistics, or details not present in the context.
-4. When referencing information, naturally mention the source (e.g., "According to [filename]..." or "As stated in [filename], page X...").
-5. For follow-up questions, use the conversation history to understand context, but still ground answers in the document context.
+4. Naturally cite sources inline where relevant (e.g., *(Unit 1.pdf, Page 8)* or *According to [filename], Page X*).
+5. For follow-up questions, use the conversation history to understand context, but still ground answers strictly in the document context.
 6. For comparison questions across multiple documents, clearly distinguish which document contains which information.
-7. Be concise but thorough. Use bullet points or numbered lists when appropriate.
-8. Format your response in clean markdown.
-
-At the END of your response, include a JSON block with citations in this EXACT format:
-\`\`\`citations
-[{"filename":"doc.pdf","page":1,"excerpt":"brief quote from chunk"}]
-\`\`\`
-Only include citations that actually support your response. If no information was found, use: []`;
+7. Be concise, well-structured, and professional. Use clean markdown formatting: clear headings, neat bulleted or numbered lists, and bold keywords.
+8. Do NOT output raw JSON blocks or citation arrays at the end — our UI automatically displays interactive citations in a dedicated panel.`;
 }
 
 // ─── LLM Streaming ────────────────────────────────────────────────────────────
