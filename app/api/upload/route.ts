@@ -35,6 +35,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       onBeforeGenerateToken: async (pathname) => {
         return {
           maximumSizeInBytes: 50 * 1024 * 1024, // 50 MB
+          addRandomSuffix: true,
+          allowOverwrite: true,
           tokenPayload: JSON.stringify({ pathname }),
         };
       },

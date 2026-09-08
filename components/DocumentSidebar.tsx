@@ -58,20 +58,44 @@ export default function DocumentSidebar({
       onFilesUploaded([initialFile]);
 
       try {
-        // Upload directly to Vercel Blob (bypasses Vercel's 4.5 MB API body limit)
-        const blob = await upload(filename, file, {
-          access: "public",
-          handleUploadUrl: "/api/upload",
-        });
+        let processRes: Response;
 
-        onFileStatusUpdate(filename, { status: "processing" });
+        try {
+          // Attempt 1: Upload directly to Vercel Blob (bypasses Vercel's 4.5 MB body limit)
+          const blob = await upload(filename, file, {
+            access: "public",
+            handleUploadUrl: "/api/upload",
+          });
 
-        // Send only the blob URL to /api/process — no large body
-        const processRes = await fetch("/api/process", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ blobUrl: blob.url, filename, sessionId }),
-        });
+          onFileStatusUpdate(filename, { status: "processing" });
+
+          processRes = await fetch("/api/process", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ blobUrl: blob.url, filename, sessionId }),
+          });
+        } catch (blobErr) {
+          console.warn("Blob upload fallback triggered:", blobErr);
+          onFileStatusUpdate(filename, { status: "processing" });
+
+          // Attempt 2: Fallback to direct base64 transfer (for local dev / small PDFs)
+          const base64 = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              const res = reader.result as string;
+              const commaIndex = res.indexOf(",");
+              resolve(commaIndex !== -1 ? res.substring(commaIndex + 1) : res);
+            };
+            reader.onerror = () => reject(new Error("Failed to read file"));
+            reader.readAsDataURL(file);
+          });
+
+          processRes = await fetch("/api/process", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ buffer: base64, filename, sessionId }),
+          });
+        }
 
         const processData = await processRes.json();
 
